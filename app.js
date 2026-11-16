@@ -1,7 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id), ar=n=>String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[+d]);
 const levels=[{name:'الأول',min:1,max:5,time:25},{name:'الثاني',min:6,max:10,time:20},{name:'الثالث',min:1,max:10,time:15},{name:'التحدي الأقوى',min:1,max:10,time:10}];
-let screen='home', mode='solo', players=[], level=0, questions=[], questionIndex=0, turn=0, scores=[0,0], mistakes=[], activeMistakes=[], golden=false, roundStarter=0, duelLeg=0, locked=false, correct=0, countdown=0, timer=null, questionToken=0, practice=false, rescueLevel=0, rescuePosition=0, rescueName='', rescueAnswer=0, rescueToken=0, rescueLocked=false;
+let screen='home', mode='solo', players=[], level=0, questions=[], questionIndex=0, turn=0, scores=[0,0], mistakes=[], activeMistakes=[], golden=false, roundStarter=0, duelLeg=0, locked=false, correct=0, countdown=0, timer=null, questionToken=0, practice=false, rescueLevel=0, rescuePosition=0, rescueName='', rescueGender='male', rescueAnswer=0, rescueToken=0, rescueLocked=false;
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback}catch{return fallback}}
 function store(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch(e){}}
 function show(id){clearInterval(timer);questionToken++;screen=id;['home','levels','game','result','memory','rescue'].forEach(x=>$(x).classList.toggle('hidden',x!==id));window.scrollTo(0,0)}
@@ -24,8 +24,9 @@ function endQuestions(){clearInterval(timer);saveMistakes();if(mode==='duel'){if
 function showHistory(){const history=read('math-results',[]);if(!history.length){modal('النتائج المحفوظة','لم تُسجّل نتائج بعد.',()=>{},'حسنًا','📊');return}modal('آخر النتائج',history.slice(0,8).map(r=>r.mode==='duel'?r.players.join(' ضد ')+' — '+r.scores.map(ar).join(' : '):(r.player||'متسابق')+' — '+ar(r.score)+' / '+ar(r.total)).join(' | '),()=>{},'إغلاق','📊')}
 function openMemory(){show('memory');$('memoryFrame').src='memory-game.html'}
 function closeMemory(){home()}
-function openRescue(){$('rescuerName').value=$('name1').value.trim();$('rescueSetup').classList.remove('hidden');$('rescuePlay').classList.add('hidden');$('rescueComplete').classList.add('hidden');show('rescue')}
-function startRescue(){rescueLevel=Number($('rescueLevel').value);rescueName=$('rescuerName').value.trim()||$('name1').value.trim();if(!rescueName){modal('اسم المنقذ','اكتب اسمك حتى نضعه على شهادة الشكر.',()=>{$('rescuerName').focus()},'حسنًا','✍️');return}rescuePosition=0;rescueToken++;$('rescueSetup').classList.add('hidden');$('rescueComplete').classList.add('hidden');$('rescuePlay').classList.remove('hidden');renderRescue()}
+function ensureRescueGender(){if($('rescuerGender'))return;const input=$('rescuerName');const label=document.createElement('label');label.textContent='صفة المتسابق في رحلة الإنقاذ';label.style.cssText='display:block;margin:12px 0;color:#f5d58e;font-weight:bold';const select=document.createElement('select');select.id='rescuerGender';select.setAttribute('aria-label','اختيار المنقذ أو المنقذة');select.style.cssText='display:block;width:100%;padding:12px;border-radius:10px;font:inherit;margin-top:8px';select.innerHTML='<option value="male">منقذ — شهادة المنقذ المتميز</option><option value="female">منقذة — شهادة المنقذة المتميزة</option>';label.appendChild(select);input.insertAdjacentElement('afterend',label)}
+function openRescue(){ensureRescueGender();$('rescuerName').value=$('name1').value.trim();$('rescueSetup').classList.remove('hidden');$('rescuePlay').classList.add('hidden');$('rescueComplete').classList.add('hidden');show('rescue')}
+function startRescue(){ensureRescueGender();rescueGender=$('rescuerGender').value==='female'?'female':'male';rescueLevel=Number($('rescueLevel').value);rescueName=$('rescuerName').value.trim()||$('name1').value.trim();if(!rescueName){modal('اسم المنقذ','اكتب اسمك حتى نضعه على شهادة الشكر.',()=>{$('rescuerName').focus()},'حسنًا','✍️');return}rescuePosition=0;rescueToken++;$('rescueSetup').classList.add('hidden');$('rescueComplete').classList.add('hidden');$('rescuePlay').classList.remove('hidden');renderRescue()}
 const rescueLevels=[{name:'ممر الفراشات',min:1,max:5,steps:8},{name:'جسر الشلال',min:4,max:9,steps:10},{name:'الغابة العميقة',min:6,max:10,steps:12},{name:'قمم الضباب',min:8,max:10,steps:14},{name:'الطريق الأسطوري',min:9,max:10,steps:16}];
 function renderRescue(){rescueLocked=false;rescueToken++;const token=rescueToken;const cfg=rescueLevels[rescueLevel];const total=cfg.steps;
 $('rescueTrack').innerHTML=Array.from({length:total+1},(_,i)=>`<div class="rescue-step ${i===rescuePosition?'current':''}" title="الخطوة ${ar(i)}">${i===rescuePosition?'🧒':i===total?'🏡':ar(i)}</div>`).join('');
@@ -50,7 +51,7 @@ function finishRescue(){
  $('rescueFinishedTitle').textContent=all?'🏆 اكتملت رحلة الإنقاذ بجميع مستوياتها!':'🎉 أحسنت! أنجزت مستوى '+rescueLevels[rescueLevel].name;
  $('rescueThanks').textContent=all?'شكرًا لك يا '+rescueName+'! أكملت جميع المستويات الخمسة وأعدت الطفل إلى والديه.':'شكرًا لك يا '+rescueName+'! أنجزت مستوى '+rescueLevels[rescueLevel].name+'، وتستحق شهادة شكر.';
  $('rescueContinue').classList.toggle('hidden',rescueLevel===rescueLevels.length-1);
- store('rescue-last',{name:rescueName,level:rescueLevel,date:new Date().toISOString()});
+ store('rescue-last',{name:rescueName,gender:rescueGender,level:rescueLevel,date:new Date().toISOString()});
 }
 function saveCertificate(){
  const c=document.createElement('canvas');c.width=1800;c.height=1273;const ctx=c.getContext('2d');
@@ -67,9 +68,9 @@ function saveCertificate(){
  const draw=(t,y,size,color='#1b4838')=>{ctx.fillStyle=color;ctx.font='bold '+size+'px Tahoma, Arial';ctx.fillText(t,900,y,1540)};
  const completed=read(rescueProgressKey(),[]);const all=rescueLevels.every((_,i)=>completed.includes(i));
  draw('شهادة شكر وتقدير',280,100,'#9c6d1b');draw('مبادرة رحلة الإنقاذ',390,66);
- draw('تُمنح إلى المنقذ المتميز',510,52);draw(rescueName,650,95,'#9c6d1b');
+ draw(rescueGender==='female'?'تُمنح إلى المنقذة المتميزة':'تُمنح إلى المنقذ المتميز',510,52);draw(rescueName,650,95,'#9c6d1b');
  draw(all?'لإتمام جميع مستويات رحلة الإنقاذ الخمسة':'لاجتياز مستوى '+rescueLevels[rescueLevel].name,755,53);
- draw('شكرًا لمساعدتك الطفل على العودة إلى والديه',845,48);
+ draw(rescueGender==='female'?'شكرًا لشجاعتك ومهارتك في مساعدة الطفل على العودة إلى والديه':'شكرًا لشجاعتك ومهارتك في مساعدة الطفل على العودة إلى والديه',845,43);
  ctx.textAlign='right';ctx.fillStyle='#173c4e';ctx.font='bold 34px Tahoma, Arial';ctx.fillText('إدارة التطبيق: محمد بن حمد',1530,1000);ctx.textAlign='left';ctx.fillText('توقيع ولي الأمر: ........................',250,1000);ctx.textAlign='center';
  draw('تحدي جداول الضرب',1170,34);
  const link=document.createElement('a');link.download=(all?'شهادة-ختامية-':'شهادة-مستوى-')+rescueLevels[rescueLevel].name+'.png';link.href=c.toDataURL('image/png');link.click();
