@@ -56,8 +56,13 @@ function saveCertificate(){
  const c=document.createElement('canvas');c.width=1800;c.height=1273;const ctx=c.getContext('2d');
  const grad=ctx.createLinearGradient(0,0,1800,1273);grad.addColorStop(0,'#e3f5dc');grad.addColorStop(.5,'#fffbea');grad.addColorStop(1,'#b6dfc3');ctx.fillStyle=grad;ctx.fillRect(0,0,c.width,c.height);
  ctx.strokeStyle='#a87820';ctx.lineWidth=25;ctx.strokeRect(45,45,1710,1183);ctx.lineWidth=5;ctx.strokeRect(75,75,1650,1123);
- // Decorative forest silhouette is a fallback, not the separately approved certificate artwork.
- for(let i=0;i<15;i++){let x=110+i*114,h=150+(i%4)*32;ctx.fillStyle='#367b55';ctx.beginPath();ctx.moveTo(x,1100-h);ctx.lineTo(x-55,1110);ctx.lineTo(x+55,1110);ctx.fill();}
+ // Layered landscape without geometric placeholder trees; reserve the center for readable text.
+ const sky=ctx.createLinearGradient(0,0,0,1273);sky.addColorStop(0,'#0b2952');sky.addColorStop(.47,'#126c8a');sky.addColorStop(1,'#d8f5e8');ctx.fillStyle=sky;ctx.fillRect(88,88,1624,1096);
+ for(let layer=0;layer<3;layer++){ctx.beginPath();const y=680+layer*135;ctx.moveTo(88,y);for(let x=88;x<=1712;x+=25){ctx.lineTo(x,y-75*Math.sin(x/125+layer*2)-40*Math.sin(x/57+layer))}ctx.lineTo(1712,1184);ctx.lineTo(88,1184);ctx.closePath();ctx.fillStyle=['#185a63','#19715f','#0f473f'][layer];ctx.fill();}
+ const water=ctx.createLinearGradient(0,760,0,1150);water.addColorStop(0,'#c8faff');water.addColorStop(1,'#158da2');ctx.fillStyle=water;ctx.beginPath();ctx.moveTo(1410,740);ctx.bezierCurveTo(1300,850,1460,980,1280,1180);ctx.lineTo(1660,1180);ctx.bezierCurveTo(1530,990,1690,820,1580,740);ctx.closePath();ctx.fill();
+ // A bright central parchment ensures Arabic certificate text remains readable.
+ ctx.fillStyle='rgba(255,252,236,.94)';ctx.beginPath();ctx.roundRect(205,205,1390,865,44);ctx.fill();
+ ctx.strokeStyle='#d7a63d';ctx.lineWidth=10;ctx.strokeRect(190,190,1420,895);
  ctx.textAlign='center';ctx.direction='rtl';
  const draw=(t,y,size,color='#1b4838')=>{ctx.fillStyle=color;ctx.font='bold '+size+'px Tahoma, Arial';ctx.fillText(t,900,y,1540)};
  const completed=read(rescueProgressKey(),[]);const all=rescueLevels.every((_,i)=>completed.includes(i));
@@ -65,7 +70,7 @@ function saveCertificate(){
  draw('تُمنح إلى المنقذ المتميز',510,52);draw(rescueName,650,95,'#9c6d1b');
  draw(all?'لإتمام جميع مستويات رحلة الإنقاذ الخمسة':'لاجتياز مستوى '+rescueLevels[rescueLevel].name,755,53);
  draw('شكرًا لمساعدتك الطفل على العودة إلى والديه',845,48);
- draw('إدارة المبادرة: محمد بن حمد',970,38);draw('توقيع ولي الأمر: ........................',1035,36);
+ ctx.textAlign='right';ctx.fillStyle='#173c4e';ctx.font='bold 34px Tahoma, Arial';ctx.fillText('إدارة التطبيق: محمد بن حمد',1530,1000);ctx.textAlign='left';ctx.fillText('توقيع ولي الأمر: ........................',250,1000);ctx.textAlign='center';
  draw('تحدي جداول الضرب',1170,34);
  const link=document.createElement('a');link.download=(all?'شهادة-ختامية-':'شهادة-مستوى-')+rescueLevels[rescueLevel].name+'.png';link.href=c.toDataURL('image/png');link.click();
 }
