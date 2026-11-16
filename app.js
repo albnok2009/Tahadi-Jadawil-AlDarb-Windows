@@ -28,7 +28,31 @@ function ensureRescueGender(){if($('rescuerGender'))return;const input=$('rescue
 function openRescue(){ensureRescueGender();$('rescuerName').value=$('name1').value.trim();$('rescueSetup').classList.remove('hidden');$('rescuePlay').classList.add('hidden');$('rescueComplete').classList.add('hidden');show('rescue')}
 function startRescue(){ensureRescueGender();rescueGender=$('rescuerGender').value==='female'?'female':'male';rescueLevel=Number($('rescueLevel').value);rescueName=$('rescuerName').value.trim()||$('name1').value.trim();if(!rescueName){modal('اسم المنقذ','اكتب اسمك حتى نضعه على شهادة الشكر.',()=>{$('rescuerName').focus()},'حسنًا','✍️');return}rescuePosition=0;rescueToken++;$('rescueSetup').classList.add('hidden');$('rescueComplete').classList.add('hidden');$('rescuePlay').classList.remove('hidden');renderRescue()}
 const rescueLevels=[{name:'ممر الفراشات',min:1,max:5,steps:8},{name:'جسر الشلال',min:4,max:9,steps:10},{name:'الغابة العميقة',min:6,max:10,steps:12},{name:'قمم الضباب',min:8,max:10,steps:14},{name:'الطريق الأسطوري',min:9,max:10,steps:16}];
-function renderRescue(){rescueLocked=false;rescueToken++;const token=rescueToken;const cfg=rescueLevels[rescueLevel];const total=cfg.steps;
+// Offline scenery for each rescue stage; no network images or external dependencies.
+const rescuePalettes=[
+ ['#153b59','#6bb6a3','#246f59','#e9b957'],
+ ['#102f52','#5cc5db','#176b75','#f3cc80'],
+ ['#102d31','#76a56c','#28553d','#ffd88b'],
+ ['#263954','#b6c9d3','#536f7c','#f6e7bd'],
+ ['#172b55','#6b93ba','#346c59','#ffe09a']
+];
+function rescueScenery(level){
+ const [sky,glow,forest,sun]=rescuePalettes[level]||rescuePalettes[0];
+ const bridge=level===1?'<path d="M180 455 Q600 350 1020 455" fill="none" stroke="#8a603b" stroke-width="32"/><path d="M180 445 Q600 340 1020 445" fill="none" stroke="#e6c18a" stroke-width="12"/>':'';
+ const falls=(level===1||level===4)?'<path d="M800 255 Q760 390 825 545 L990 545 Q940 400 1010 255Z" fill="#b1f4ff" opacity=".72"/>':'';
+ const butterflies=level===0?'<text x="230" y="250" font-size="52">🦋</text><text x="950" y="185" font-size="45">🦋</text>':'';
+ const fog=level===3?'<ellipse cx="610" cy="390" rx="540" ry="95" fill="#e5f4f2" opacity=".35"/>':'';
+ const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="s" x2="0" y2="1"><stop stop-color="'+sky+'"/><stop offset="1" stop-color="'+glow+'"/></linearGradient></defs><rect width="1200" height="650" fill="url(#s)"/><circle cx="860" cy="125" r="105" fill="'+sun+'" opacity=".75"/><path d="M0 390 Q170 140 350 370 Q530 110 760 375 Q950 165 1200 390 V650 H0Z" fill="'+forest+'" opacity=".7"/><path d="M0 495 Q190 310 410 485 Q660 280 860 490 Q1070 335 1200 485 V650 H0Z" fill="'+forest+'"/>'+falls+fog+bridge+butterflies+'<path d="M0 600 Q310 480 600 590 Q910 485 1200 600 V650 H0Z" fill="#123b37" opacity=".8"/></svg>';
+ return 'url("data:image/svg+xml,'+encodeURIComponent(svg)+'")';
+}
+function applyRescueScenery(){
+ const el=$('rescuePlay');if(!el)return;
+ el.style.backgroundImage='linear-gradient(180deg,rgba(4,20,38,.25),rgba(4,20,38,.86)), '+rescueScenery(rescueLevel);
+ el.style.backgroundSize='cover';el.style.backgroundPosition='center';
+ el.style.border='2px solid #d5a84b';el.style.borderRadius='20px';
+ el.style.boxShadow='inset 0 0 65px #061629,0 12px 35px #0008';
+}
+function renderRescue(){rescueLocked=false;rescueToken++;const token=rescueToken;const cfg=rescueLevels[rescueLevel];const total=cfg.steps;applyRescueScenery();
 $('rescueTrack').innerHTML=Array.from({length:total+1},(_,i)=>`<div class="rescue-step ${i===rescuePosition?'current':''}" title="الخطوة ${ar(i)}">${i===rescuePosition?'🧒':i===total?'🏡':ar(i)}</div>`).join('');
 $('rescueProgress').textContent=cfg.name+' — خطوات الإنقاذ: '+ar(rescuePosition)+' من '+ar(total);$('rescueNotice').textContent='';
 const a=cfg.min+Math.floor(Math.random()*(cfg.max-cfg.min+1)),b=1+Math.floor(Math.random()*10);rescueAnswer=a*b;
@@ -42,7 +66,7 @@ let introClosed=false;function closeIntro(){introClosed=true;$('intro').remove()
 
 
 // Rescue completion milestones, preserved locally per participant.
-function rescueProgressKey(){return 'rescue-completed-'+rescueName}
+function rescueProgressKey(){return 'rescue-completed-'+rescueName+'-'+rescueGender}
 function continueRescue(){if(rescueLevel>=rescueLevels.length-1){openRescue();return}rescueLevel++;$('rescueLevel').value=String(rescueLevel);startRescue()}
 function finishRescue(){
  rescueToken++;$('rescuePlay').classList.add('hidden');$('rescueComplete').classList.remove('hidden');
@@ -66,7 +90,7 @@ function saveCertificate(){
  ctx.strokeStyle='#d7a63d';ctx.lineWidth=10;ctx.strokeRect(190,190,1420,895);
  ctx.textAlign='center';ctx.direction='rtl';
  const draw=(t,y,size,color='#1b4838')=>{ctx.fillStyle=color;ctx.font='bold '+size+'px Tahoma, Arial';ctx.fillText(t,900,y,1540)};
- const completed=read(rescueProgressKey(),[]);const all=rescueLevels.every((_,i)=>completed.includes(i));
+ const completed=read(rescueProgressKey(),[]);const all=rescueLevel===rescueLevels.length-1&&rescueLevels.every((_,i)=>completed.includes(i));
  draw('شهادة شكر وتقدير',280,100,'#9c6d1b');draw('مبادرة رحلة الإنقاذ',390,66);
  draw(rescueGender==='female'?'تُمنح إلى المنقذة المتميزة':'تُمنح إلى المنقذ المتميز',510,52);draw(rescueName,650,95,'#9c6d1b');
  draw(all?'لإتمام جميع مستويات رحلة الإنقاذ الخمسة':'لاجتياز مستوى '+rescueLevels[rescueLevel].name,755,53);
