@@ -1,0 +1,33 @@
+{
+  "name": "multiplication-challenge-windows-preview",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Standalone offline Windows multiplication challenge with golden memory and rescue journey",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "sa.edu.mathchallenge.desktop.preview",
+    "productName": "Tahadi Jadawil AlDarb",
+    "files": [
+      "index.html",
+      "app.js",
+      "memory-game.html",
+      "assets/**/*",
+      "main.js",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "artifactName": "Tahadi-Jadawil-AlDarb-Windows-${version}.${ext}"
+    }
+  }
+}
